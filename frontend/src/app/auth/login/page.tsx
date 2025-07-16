@@ -94,6 +94,11 @@ const LoginPage: React.FC = () => {
       router.push('/seller/dashboard');
       return;
     }
+    else if (user && user.role === 'delivery') {
+      console.log(user);
+      router.push('/delivery/dashboard');
+      return;
+    }
     else if (user){
       router.push('/shop');
       return;

@@ -1,5 +1,6 @@
 'use client';
 
+//page for buyers to view their orders
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -35,6 +36,7 @@ import {
   Cancel,
   Visibility,
   Receipt,
+  Download,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -117,6 +119,8 @@ const OrdersPage: React.FC = () => {
         return 'info';
       case 'shipped':
         return 'primary';
+      case 'out_for_delivery':
+        return 'secondary';
       case 'delivered':
         return 'success';
       case 'cancelled':
@@ -137,6 +141,8 @@ const OrdersPage: React.FC = () => {
         return <LocalShipping />;
       case 'delivered':
         return <CheckCircle />;
+      case 'out_for_delivery':
+        return <LocalShipping />;
       case 'cancelled':
         return <Cancel />;
       default:
@@ -146,7 +152,7 @@ const OrdersPage: React.FC = () => {
 
   // Get order steps
   const getOrderSteps = (status: string) => {
-    const steps = ['Order Placed', 'Confirmed', 'Shipped', 'Delivered'];
+    const steps = ['Order Placed', 'Confirmed', 'Shipped', 'Out For Delivery','Delivered'];
     let activeStep = 0;
     
     switch (status) {
@@ -159,8 +165,11 @@ const OrdersPage: React.FC = () => {
       case 'shipped':
         activeStep = 2;
         break;
-      case 'delivered':
+      case 'out_for_delivery':
         activeStep = 3;
+        break;
+      case 'delivered':
+        activeStep = 4;
         break;
       case 'cancelled':
         return { steps: ['Order Placed', 'Cancelled'], activeStep: 1 };
@@ -456,11 +465,64 @@ const OrdersPage: React.FC = () => {
                   </Typography>
                 </Box>
               </Box>
+              
+              {/*show Delivery OTP if available */}
+              {selectedOrder.deliveryOTP && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Delivery OTP
+                  </Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {selectedOrder.deliveryOTP}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Please use this OTP to confirm delivery.
+                  </Typography>
+                </Box>
+              )}
+
             </Box>
-          )}
+
+           
+            )}
+
+          
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOrderDetailsOpen(false)}>Close</Button>
+          {selectedOrder && selectedOrder.status === 'delivered' && (
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={async () => {
+                try {
+                  const response = await api.get(`/orders/${selectedOrder._id}/invoice`, {
+                    responseType: 'blob'
+                  });
+                  
+                  // Create blob link to download
+                  const url = window.URL.createObjectURL(new Blob([response.data]));
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', `invoice-${selectedOrder.orderNumber}.pdf`);
+                  
+                  // Append to html page
+                  document.body.appendChild(link);
+                  link.click();
+                  
+                  // Clean up and remove the link
+                  link.parentNode.removeChild(link);
+                  
+                  toast.success('Invoice downloaded successfully');
+                } catch (error) {
+                  console.error('Error downloading invoice:', error);
+                  toast.error('Failed to download invoice');
+                }
+              }}
+            >
+              Download Invoice
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Container>

@@ -17,7 +17,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Database connection
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/flipkart-clone', {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/flipkart-clone' , {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -39,6 +39,9 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/seller', require('./routes/seller'));
+const deliveryRoutes = require('./routes/delivery');
+app.use('/api/delivery', deliveryRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

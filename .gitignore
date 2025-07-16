@@ -1,0 +1,5 @@
+/node_modules
+/uploads
+backend/.env
+.vscode/settings.json
+.env

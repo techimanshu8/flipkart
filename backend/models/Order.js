@@ -12,7 +12,7 @@ const orderItemSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true
+    required: false
   },
   price: {
     type: Number,
@@ -31,6 +31,21 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  deliveryAgent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DeliveryAgent',
+    default: null
+  },
+  deliveryOTP: {
+    type: String,
+    select: true // Make OTP visible in queries
+  },
+  deliveryAttempts: [{
+    attemptedAt: Date,
+    status: String,
+    note: String
+  }],
+  deliveredAt: Date,
   orderNumber: {
     type: String,
     unique: true
@@ -84,7 +99,7 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'confirmed', 'shipped', 'out_for_delivery','delivered', 'cancelled'],
     default: 'pending'
   },
   isPaid: {
@@ -106,6 +121,25 @@ const orderSchema = new mongoose.Schema({
   trackingNumber: {
     type: String
   },
+  deliveryAgent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  deliveryOTP: {
+    type: String,
+    length: 6
+  },
+  deliveryOTPExpiry: {
+    type: Date
+  },
+  deliveryAttempts: [{
+    attemptedAt: Date,
+    status: {
+      type: String,
+      enum: ['success', 'failed', 'customer_unavailable']
+    },
+    notes: String
+  }],
   notes: {
     type: String
   }

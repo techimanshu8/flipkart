@@ -11,8 +11,21 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 
 // Connect to DB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/flipkart-clone');
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/flipkart-clone' , {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('MongoDB connection error:', error.message);
+    process.exit(1);
+  }
+};
 
+// Connect to database
+connectDB();
 // Sample data
 const users = [
   {
@@ -34,26 +47,31 @@ const categories = [
     name: 'Electronics',
     description: 'Electronic devices and gadgets',
     slug: 'electronics',
+    isActive: true
   },
   {
     name: 'Clothing',
     description: 'Fashion and apparel',
     slug: 'clothing',
+    isActive: true
   },
   {
     name: 'Home & Kitchen',
     description: 'Home appliances and kitchen items',
     slug: 'home-kitchen',
+    isActive: true
   },
   {
     name: 'Books',
     description: 'Books and literature',
     slug: 'books',
+    isActive: true
   },
   {
     name: 'Sports',
     description: 'Sports and fitness equipment',
     slug: 'sports',
+    isActive: true
   },
 ];
 
@@ -62,7 +80,7 @@ const importData = async () => {
   try {
     //await User.deleteMany();
    // await Category.deleteMany();
-    await Product.deleteMany();
+   // await Product.deleteMany();
 
     // Hash passwords for users
     //for (let user of users) {
@@ -72,7 +90,7 @@ const importData = async () => {
 
    //const createdUsers = await User.insertMany(users);
    //const adminUser = createdUsers[0]._id;
-   const adminUser = await User.findOne({email:"user@flipkart.com"});
+   const adminUser = await User.findOne({email:"user2@gmail.com"});
     console.log(adminUser);
     //const createdCategories = await Category.find();
     const createdCategories = await Category.find({ isActive: true })

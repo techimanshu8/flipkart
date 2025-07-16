@@ -23,6 +23,12 @@ import {
   Alert,
   Badge,
   IconButton,
+  useMediaQuery,
+  useTheme,
+  Avatar,
+  Stack,
+  Divider,
+  Paper,
 } from '@mui/material';
 import {
   Search,
@@ -75,7 +81,13 @@ const ShopPage: React.FC = () => {
 
   const { user } = useAuth();
   const { addToCart, cart } = useCart();
+  const [aiSuggestions, setAiSuggestions] = useState<Product[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [profiledCategories, setProfiledCategories] = useState<Category[]>([]);
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Fetch products
   const fetchProducts = async (page = 1) => {
@@ -99,6 +111,9 @@ const ShopPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Failed to load products');
+      // Simulate AI suggestions and trending for demo
+      setAiSuggestions(response.data.products.slice(0, 4));
+      setTrendingProducts(response.data.products.slice(0, 4).reverse());
     } finally {
       setLoading(false);
     }
@@ -109,9 +124,12 @@ const ShopPage: React.FC = () => {
     try {
       const response = await api.get('/categories');
       setCategories(response.data.categories);
+      setProfiledCategories(response.data.categories.slice(0, 2));
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
+  
+      
   };
 
   // Handle add to cart
@@ -183,7 +201,7 @@ const ShopPage: React.FC = () => {
   };
 
   // Check if user needs to login
-  if (!user) {
+  if (0 & !user) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Alert severity="warning" sx={{ mb: 3 }}>

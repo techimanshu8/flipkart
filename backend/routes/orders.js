@@ -3,6 +3,10 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/auth');
+const generateInvoice = require('../utils/generateInvoice');
+const path = require('path');
+const fs = require('fs');
+
 
 const router = express.Router();
 
@@ -146,7 +150,8 @@ router.get('/', protect, async (req, res) => {
       paymentStatus: order.paymentStatus,
       deliveryAddress: order.deliveryAddress,
       createdAt: order.createdAt,
-      updatedAt: order.updatedAt
+      updatedAt: order.updatedAt,
+      deliveryOTP: order.deliveryOTP,
     }));
 
     res.json({
@@ -346,6 +351,64 @@ router.put('/:id/cancel', protect, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// @route   GET /api/orders/:orderId/invoice
+// @desc    Generate and download invoice
+// @access  Private
+router.get('/:orderId/invoice', protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId)
+      .populate('user', 'name email')
+      .populate({
+        path: 'orderItems.product',
+        select: 'name price description brand seller warranty',
+        populate: {
+          path: 'seller',
+          select: 'name email businessName gstin address '
+        }
+      });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Check if order is delivered
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ message: 'Invoice is only available for delivered orders' });
+    }
+
+    // Check if user owns this order or is the seller or admin
+    const isOwner = order.user._id.toString() === req.user.id;
+    const isSeller = order.orderItems.some(item => 
+      item.product.seller && item.product.seller._id.toString() === req.user.id
+    );
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isSeller && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to access this invoice' });
+    }
+
+    // Generate invoice
+    const invoicePath = await generateInvoice(order);
+
+    // Send file
+    res.download(invoicePath, `invoice-${order.orderNumber}.pdf`, (err) => {
+      if (err) {
+        console.error('Error downloading file:', err);
+        res.status(500).json({ message: 'Error downloading invoice' });
+      }
+      
+      // Clean up - delete the file after sending
+      fs.unlink(invoicePath, (unlinkErr) => {
+        if (unlinkErr) console.error('Error deleting invoice file:', unlinkErr);
+      });
+    });
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    res.status(500).json({ message: 'Failed to generate invoice' });
   }
 });
 

@@ -210,6 +210,11 @@ const CheckoutPage: React.FC = () => {
           product: item.product._id,
           quantity: item.quantity,
           price: item.price,
+          productDetails: {
+            name: item.product.name,
+            price: item.product.price,
+            image: item.product.images?.[0]?.url
+          }
         })),
         totalAmount: cart?.totalAmount,
       };
@@ -290,23 +295,32 @@ const CheckoutPage: React.FC = () => {
         </Typography>
         {cart.items.map((item) => (
           <Box key={item._id} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Image
-              src={item.product.images[0]?.url || '/placeholder.jpg'}
-              alt={item.product.name}
-              width={60}
-              height={60}
-              style={{ borderRadius: '8px' }}
-            />
-            <Box sx={{ ml: 2, flexGrow: 1 }}>
-              <Typography variant="body1">{item.product.name}</Typography>
+            <Box sx={{ position: 'relative', width: 60, height: 60, borderRadius: '8px', overflow: 'hidden' }}>
+              <Image
+                src={item.product.images?.[0]?.url || '/placeholder.jpg'}
+                alt={item.product.name}
+                width={60}
+                height={60}
+                style={{ objectFit: 'cover' }}
+                onError={(e: any) => {
+                  e.currentTarget.src = '/placeholder.jpg';
+                }}
+              />
+             <Box sx={{ ml: 2, flexGrow: 1 }}>
+              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{item.product.name || 'Product Name Unavailable'}</Typography>
               <Typography variant="body2" color="text.secondary">
                 Quantity: {item.quantity}
               </Typography>
+              {item.product.brand && (
+                <Typography variant="caption" color="text.secondary">
+                  Brand: {item.product.brand}
+                </Typography>
+              )}
             </Box>
             <Typography variant="body1" fontWeight="bold">
               {formatPrice(item.price * item.quantity)}
             </Typography>
-          </Box>
+          </Box> </Box>
         ))}
         <Divider sx={{ my: 2 }} />
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

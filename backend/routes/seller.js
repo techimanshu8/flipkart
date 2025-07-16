@@ -4,6 +4,7 @@ const path = require('path');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Category = require('../models/Category');
+const DeliveryAgent = require('../models/DeliveryAgent');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -508,6 +509,47 @@ router.put('/orders/:id/cancel', protect, sellerOnly, async (req, res) => {
     res.json({
       success: true,
       message: 'Order cancelled successfully',
+      order
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// @ route Post /api/seller/orders/:orderid/assign-delivery 
+// @ desc Assign delivery agent to order
+// @ access Private/Seller
+router.post('/orders/:orderId/assign-delivery', protect, sellerOnly, async (req, res) => {
+  try {
+    const { deliveryAgentId } = req.body; 
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    // Check if order contains seller's products
+    const sellerProducts = await Product.find({ seller: req.user.id, _id: { $in: order.orderItems.map(item => item.product) } });
+    if (sellerProducts.length === 0) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    // Check if order is in a state that allows assigning delivery
+    if (order.status !== 'shipped') {
+      return res.status(400).json({ message: 'Order must be shipped to assign delivery agent' });
+    }
+    // Check if delivery agent exists
+    const deliveryAgent = await DeliveryAgent.findById(deliveryAgentId);
+    if (!deliveryAgent) {
+      return res.status(404).json({ message: 'Delivery agent not found' });
+    }
+    // Assign delivery agent to order
+    order.deliveryAgent = deliveryAgentId;
+    order.status = 'out_for_delivery'; // Update status to out for delivery
+
+    await order.save();
+    res.json({
+      success: true,
+      message: 'Delivery agent assigned successfully',
       order
     });
   } catch (error) {

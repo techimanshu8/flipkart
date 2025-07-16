@@ -66,8 +66,58 @@ const userSchema = new mongoose.Schema({
   }],
   role: {
     type: String,
-    enum: ['customer', 'seller', 'admin'],
+    enum: ['customer', 'seller', 'admin', 'delivery'],
     default: 'customer'
+  },
+  deliveryInfo: {
+    isAvailable: {
+      type: Boolean,
+      default: true
+    },
+    currentLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0]
+      }
+    },
+    vehicleType: {
+      type: String,
+      enum: ['bike', 'scooter', 'cycle'],
+      required: function() {
+        return this.role === 'delivery';
+      }
+    },
+    vehicleNumber: {
+      type: String,
+      required: function() {
+        return this.role === 'delivery';
+      }
+    },
+    deliveryRadius: {
+      type: Number,
+      default: 5, // in kilometers
+    },
+    activeOrders: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order'
+    }],
+    completedOrders: {
+      type: Number,
+      default: 0
+    },
+    rating: {
+      type: Number,
+      default: 0
+    },
+    totalRatings: {
+      type: Number,
+      default: 0
+    }
   },
   sellerInfo: {
     businessName: String,
