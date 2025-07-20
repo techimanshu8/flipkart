@@ -23,20 +23,13 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondary,
-  IconButton,
-  Badge,
   CircularProgress,
 } from '@mui/material';
 import {
   LocationOn,
-  DirectionsBike,
   Star,
   LocalShipping,
-  CheckCircle,
-  Cancel,
   Phone,
-  Navigation,
   ConfirmationNumber,
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,15 +79,16 @@ const DeliveryDashboard: React.FC = () => {
       fetchStats();
     }
     
-  }, [user]);
+  }, [user, router]);
 
   const fetchActiveOrders = async () => {
     try {
 
       const response = await api.get('/delivery/orders/available');
       setActiveOrders(response.data.orders);
-    } catch (error) {
-      toast.error('Failed to fetch orders');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to fetch orders';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -104,8 +98,9 @@ const DeliveryDashboard: React.FC = () => {
     try {
       const response = await api.get('/delivery/stats');
       setStats(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch statistics');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to fetch statistics';
+      toast.error(errorMsg);
     }
   };
 
@@ -116,8 +111,9 @@ const DeliveryDashboard: React.FC = () => {
       });
       setIsAvailable(!isAvailable);
       toast.success(`You are now ${!isAvailable ? 'available' : 'unavailable'} for deliveries`);
-    } catch (error) {
-      toast.error('Failed to update availability');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update availability';
+      toast.error(errorMsg);
     }
   };
 
@@ -128,8 +124,9 @@ const DeliveryDashboard: React.FC = () => {
       setSelectedOrder(null);
       fetchActiveOrders();
       toast.success('Delivery accepted successfully. OTP has been generated.');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to accept delivery');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to accept delivery';
+      toast.error(errorMsg);
     }
     setOtpDialogOpen(true); 
     setOtp(''); // Reset OTP field when accepting a new delivery
@@ -149,8 +146,9 @@ const DeliveryDashboard: React.FC = () => {
       setOtp('');
       fetchActiveOrders();
       fetchStats();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid OTP');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Invalid OTP';
+      toast.error(errorMsg);
     }
   };
 
@@ -202,7 +200,7 @@ const DeliveryDashboard: React.FC = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Today's Earnings</Typography>
+                <Typography variant="h6">Today&apos;s Earnings</Typography>
               </Box>
               <Typography variant="h4">{formatPrice(stats.earnings)}</Typography>
             </CardContent>

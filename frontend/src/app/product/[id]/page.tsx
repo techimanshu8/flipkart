@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -10,7 +10,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Divider,
+  // Divider,
   IconButton,
   Badge,
   Rating,
@@ -23,7 +23,11 @@ import {
   Alert,
   Skeleton,
   ButtonGroup,
+  Modal,
+  Fade,
+  Backdrop,
 } from '@mui/material';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
   ShoppingCart,
   FavoriteBorder,
@@ -34,6 +38,11 @@ import {
   LocalShipping,
   Security,
   Verified,
+  // ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  Close,
+  PlayCircle,
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,7 +57,7 @@ interface Product {
   description: string;
   price: number;
   originalPrice?: number;
-  images: Array<{ url: string; alt?: string }>;
+  images: Array<{ url: string; alt?: string; type?: 'image' | 'video' }>;
   category: {
     _id: string;
     name: string;
@@ -100,6 +109,52 @@ const ProductDetailPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [tabValue, setTabValue] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  // const [isSwiping, setIsSwiping] = useState(false);
+  const touchStart = useRef<number>(0);
+  const touchEnd = useRef<number>(0);
+
+  // Touch handlers for swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isSwiping && product) {
+      const swipeThreshold = 50;
+      const diff = touchStart.current - touchEnd.current;
+
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0 && selectedImage < product.images.length - 1) {
+          setSelectedImage(prev => prev + 1);
+        } else if (diff < 0 && selectedImage > 0) {
+          setSelectedImage(prev => prev - 1);
+        }
+      }
+    }
+  };
+
+  // Navigation handlers
+  const handlePrevImage = () => {
+    if (selectedImage > 0) {
+      setSelectedImage(prev => prev - 1);
+    }
+  };
+
+  const handleNextImage = () => {
+    if (product && selectedImage < product.images.length - 1) {
+      setSelectedImage(prev => prev + 1);
+    }
+  };
+
+  // Handle video playback
+  const handleVideoClick = (index: number) => {
+    setSelectedImage(index);
+  };
 
   const { id } = useParams();
   const { user } = useAuth();
@@ -133,7 +188,7 @@ const ProductDetailPage: React.FC = () => {
     try {
       await addToCart(product._id, quantity);
       toast.success(`${quantity} item(s) added to cart!`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(error.message || 'Failed to add product to cart');
     }
   };
@@ -211,12 +266,22 @@ const ProductDetailPage: React.FC = () => {
         Back to Products
       </Button>
 
-      <Grid container spacing={4}>
-        {/* Product Images */}
-        <Grid item xs={12} md={6}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+        {/* Product Images - Left Column */}
+        <Box sx={{ flex: '1 1 50%', maxWidth: { md: '50%' } }}>
           <Box>
-            {/* Main Image */}
-            <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+            {/* Main Image/Video Gallery */}
+            <Paper 
+              elevation={2} 
+              sx={{ 
+                p: 2, 
+                mb: 2,
+                position: 'relative',
+                '&:hover .navigation-arrows': {
+                  opacity: 1,
+                }
+              }}
+            >
               <Box
                 sx={{
                   position: 'relative',
@@ -224,18 +289,78 @@ const ProductDetailPage: React.FC = () => {
                   height: 400,
                   overflow: 'hidden',
                   borderRadius: 2,
+                  cursor: 'zoom-in',
                 }}
+                onClick={() => setIsZoomOpen(true)}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               >
-                <Image
-                  src={product.images[selectedImage]?.url || '/placeholder.jpg'}
-                  alt={product.name}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
+                {product.images[selectedImage]?.type === 'video' ? (
+                  <video
+                    src={product.images[selectedImage].url}
+                    controls
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <Image
+                    src={product.images[selectedImage]?.url || '/placeholder.jpg'}
+                    alt={product.name}
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    quality={100}
+                  />
+                )}
+
+                {/* Navigation Arrows */}
+                <Box className="navigation-arrows" sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  opacity: 0,
+                  transition: 'opacity 0.3s',
+                  px: 2,
+                  pointerEvents: 'none',
+                }}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePrevImage();
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.8)',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+                      pointerEvents: 'auto',
+                      visibility: selectedImage === 0 ? 'hidden' : 'visible',
+                    }}
+                  >
+                    <ChevronLeft />
+                  </IconButton>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNextImage();
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.8)',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+                      pointerEvents: 'auto',
+                      visibility: selectedImage === product.images.length - 1 ? 'hidden' : 'visible',
+                    }}
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </Box>
               </Box>
             </Paper>
 
-            {/* Image Thumbnails */}
+            {/* Image/Video Thumbnails */}
             <Grid container spacing={1}>
               {product.images.map((image, index) => (
                 <Grid item xs={3} key={index}>
@@ -245,8 +370,13 @@ const ProductDetailPage: React.FC = () => {
                       p: 1,
                       cursor: 'pointer',
                       border: selectedImage === index ? '2px solid primary.main' : 'none',
+                      position: 'relative',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.05)',
+                      }
                     }}
-                    onClick={() => setSelectedImage(index)}
+                    onClick={() => image.type === 'video' ? handleVideoClick(index) : setSelectedImage(index)}
                   >
                     <Box
                       sx={{
@@ -256,24 +386,108 @@ const ProductDetailPage: React.FC = () => {
                         overflow: 'hidden',
                         borderRadius: 1,
                       }}
-                    >
-                      <Image
-                        src={image.url}
-                        alt={`${product.name} ${index + 1}`}
-                        fill
-                        style={{ objectFit: 'cover' }}
-                      />
+                     >
+                      {image.type === 'video' ? (
+                        <Box>
+                          <Image
+                            src={image.url + '?thumb=1'}
+                            alt={`${product.name} video`}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                          />
+                          <PlayCircle
+                            sx={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              color: 'white',
+                              fontSize: '2rem',
+                            }}
+                          />
+                        </Box>
+                       ) : (
+                        <Image
+                          src={image.url}
+                          alt={`${product.name} ${index + 1}`}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                        />
+                      )}
                     </Box>
                   </Paper>
                 </Grid>
               ))}
             </Grid>
-          </Box>
-        </Grid>
 
-        {/* Product Info */}
-        <Grid item xs={12} md={6}>
-          <Box>
+            {/* Zoom Modal */}
+            <Modal
+              open={isZoomOpen}
+              onClose={() => setIsZoomOpen(false)}
+              closeAfterTransition
+              BackdropComponent={Backdrop}
+              BackdropProps={{
+                timeout: 500,
+              }}
+            >
+              <Fade in={isZoomOpen}>
+                <Box sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '90vw',
+                  height: '90vh',
+                  bgcolor: 'background.paper',
+                  boxShadow: 24,
+                  p: 2,
+                  outline: 'none',
+                  }}>
+                  <IconButton
+                    onClick={() => setIsZoomOpen(false)}
+                    sx={{
+                      position: 'absolute',
+                      right: 8,
+                      top: 8,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Close />
+                  </IconButton>
+                  
+                  <TransformWrapper
+                    initialScale={1}
+                    initialPositionX={0}
+                    initialPositionY={0}
+                  >
+                    <TransformComponent>
+                      <Image
+                        src={product.images[selectedImage]?.url || '/placeholder.jpg'}
+                        alt={product.name}
+                        width={1500}
+                        height={1500}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </TransformComponent>
+                  </TransformWrapper>
+                </Box>
+              </Fade>
+            </Modal>
+          </Box>
+        </Box>
+      </Box>
+        {/* Product Info - Right Column */}
+        <Box 
+          sx={{ 
+            flex: '1 1 50%', 
+            maxWidth: { md: '50%' },
+            position: { md: 'sticky' },
+            top: { md: '20px' },
+            alignSelf: { md: 'flex-start' },
+            maxHeight: { md: 'calc(100vh - 40px)' },
+            overflowY: { md: 'auto' }
+          }}
+        >
             {/* Product Name */}
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
               {product.name}
@@ -418,10 +632,8 @@ const ProductDetailPage: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Box>
-        </Grid>
-      </Grid>
-
+        </Box>
+      
       {/* Product Details Tabs */}
       <Box sx={{ mt: 6 }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="product details tabs">
@@ -448,7 +660,7 @@ const ProductDetailPage: React.FC = () => {
             {product.specifications.map((spec, index) => (
               <ListItem key={index} divider>
                 <ListItemText
-                  primary={spec.key}
+                  primary={spec.name}
                   secondary={spec.value}
                 />
               </ListItem>
@@ -481,6 +693,7 @@ const ProductDetailPage: React.FC = () => {
           </Typography>
         </TabPanel>
       </Box>
+      
     </Container>
   );
 };

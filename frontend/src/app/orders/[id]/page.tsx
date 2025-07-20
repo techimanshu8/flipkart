@@ -8,16 +8,12 @@ import {
   Paper,
   Grid,
   Chip,
-  Button,
   Alert,
   CircularProgress,
   Divider,
-  Card,
-  CardContent,
   Stack,
 } from '@mui/material';
 import {
-  LocalShipping,
   LocationOn,
   Person,
   Phone,
@@ -52,7 +48,14 @@ interface OrderDetails {
   createdAt: string;
 }
 
-const OrderDetailsPage = ({ params }: { params: { id: string } }) => {
+interface PageProps {
+  params: {
+    id: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+const OrderDetailsPage: React.FC<PageProps> = ({ params }) => {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -64,18 +67,19 @@ const OrderDetailsPage = ({ params }: { params: { id: string } }) => {
       return;
     }
     fetchOrderDetails();
-  }, [user, params.id]);
+  }, [user, params.id, router, fetchOrderDetails]);
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = React.useCallback(async () => {
     try {
       const response = await api.get(`/orders/${params.id}`);
       setOrder(response.data.order);
-    } catch (error) {
-      toast.error('Failed to fetch order details');
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || 'Failed to fetch order details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {

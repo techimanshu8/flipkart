@@ -104,9 +104,10 @@ const RegisterPage: React.FC = () => {
       await registerUser(data.name, data.email, data.password, data.phone);
       toast.success('Registration successful! Welcome to Flipkart!');
       router.push('/');
-    } catch (error: any) {
-      setError(error.message);
-      toast.error(error.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,6 @@ import {
   Button,
   Paper,
   Grid,
-  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -26,7 +25,6 @@ import {
   Phone,
   Email,
   Lock,
-  DriveFileRenameOutline,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -70,17 +68,30 @@ const RegisterDeliveryPage = () => {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = async (data: any) => {
+  interface DeliveryFormData {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    vehicleType: string;
+    vehicleNumber: string;
+    licenseNumber: string;
+    aadharNumber: string;
+    area: string;
+  }
+
+  const onSubmit = async (data: DeliveryFormData) => {
     try {
       setLoading(true);
-      const response = await api.post('/delivery/register', {
+      await api.post('/delivery/register', {
         ...data,
         role: 'delivery',
       });
       
       toast.success('Registration successful! Please wait for admin approval.');
       router.push('/auth/login');
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);

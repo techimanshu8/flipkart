@@ -13,7 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Button,
   Chip,
   IconButton,
@@ -26,7 +25,6 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
-  Dashboard,
   Inventory,
   ShoppingCart,
   AttachMoney,
@@ -41,12 +39,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
 import { toast } from 'react-toastify';
 
-interface DashboardData {
-  totalProducts: number;
-  totalOrders: number;
-  totalRevenue: number;
-  recentOrders: any[];
-  lowStockProducts: any[];
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  stock: number;
+  images: { url: string }[];
+}
+
+interface OrderItem {
+  product: string;
+  quantity: number;
+  price: number;
 }
 
 interface Order {
@@ -56,16 +60,25 @@ interface Order {
     name: string;
     email: string;
   };
-  orderItems: any[];
+  orderItems: OrderItem[];
+  items: OrderItem[];
   totalAmount: number;
   status: string;
   createdAt: string;
 }
 
+interface DashboardData {
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  recentOrders: Order[];
+  lowStockProducts: Product[];
+}
+
 const SellerDashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -80,9 +93,11 @@ const SellerDashboard: React.FC = () => {
       router.push('/auth/login');
       return;
     }
-    fetchDashboardData();
-    fetchOrders();
-  }, [user]);
+    else if (user.role==='seller') {
+      fetchDashboardData();
+      fetchOrders();
+    }
+  }, [user, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -107,7 +122,7 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
-  const handleOrderAction = async (orderId: string, action: string) => {
+  const handleOrderAction = async (orderId: string, action: 'accept' | 'ship' | 'cancel') => {
     try {
       let response;
       switch (action) {
@@ -133,7 +148,7 @@ const SellerDashboard: React.FC = () => {
       setOrderDialogOpen(false);
       setTrackingNumber('');
       setCancelReason('');
-    } catch (error: any) {
+    } catch (error:instance of Error) {
       toast.error(error.response?.data?.message || 'Failed to update order');
     }
   };
@@ -328,7 +343,7 @@ const SellerDashboard: React.FC = () => {
                     <TableCell>
                       <Chip
                         label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        color={getStatusColor(order.status) as any}
+                        color={getStatusColor(order.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                         size="small"
                       />
                     </TableCell>

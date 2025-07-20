@@ -17,24 +17,21 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   MenuItem,
   FormControl,
   InputLabel,
   Select,
   Chip,
-  Alert,
   CircularProgress,
-  IconButton,
 } from '@mui/material';
 import {
-  LocationOn,
-  Motorcycle,
+  // LocationOn,
+  // Motorcycle,
   Star,
-  Check,
-  Close,
-  Phone,
-  Send,
+  // Check,
+  // Close,
+  // Phone,
+  // Send,
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
@@ -80,7 +77,7 @@ const DeliveryManagementPage: React.FC = () => {
   const [otp, setOtp] = useState('');
 
   const { user } = useAuth();
-  const router = useRouter();
+  // const router = useRouter();
 
   useEffect(() => {
     if (!user || user.role !== 'seller') {
@@ -96,7 +93,7 @@ const DeliveryManagementPage: React.FC = () => {
     try {
       const response = await api.get('/seller/orders');
       setOrders(response.data.orders.filter((o: Order) => o.status === 'shipped'));
-    } catch (error: any) {
+    } catch () {
       toast.error('Failed to fetch orders');
     }
   };
@@ -105,7 +102,7 @@ const DeliveryManagementPage: React.FC = () => {
     try {
       const response = await api.get('/delivery/agents');
       setDeliveryAgents(response.data.deliveryAgents);
-    } catch (error: any) {
+    } catch () {
       toast.error('Failed to fetch delivery agents');
     } finally {
       setLoading(false);
@@ -128,7 +125,7 @@ const DeliveryManagementPage: React.FC = () => {
       // Refresh orders after assignment  
 
       fetchOrders();
-    } catch (error: any) {
+    } catch (error: instanceof Error) {
       console.error('Error assigning delivery agent:', error , selectedOrder._id);
       toast.error('Failed to assign delivery agent');
     }
@@ -139,7 +136,7 @@ const DeliveryManagementPage: React.FC = () => {
       const response = await api.post(`/seller/orders/${orderId}/generate-otp`);
       setOtp(response.data.otp);
       setOtpDialogOpen(true);
-    } catch (error: any) {
+    } catch () {
       toast.error('Failed to generate OTP');
     }
   };
@@ -295,7 +292,7 @@ const DeliveryManagementPage: React.FC = () => {
             {otp}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-            This OTP has been sent to the customer's phone number.
+            This OTP has been sent to the customer &#39 s phone number.
             The delivery agent will need to collect and verify this OTP upon delivery.
           </Typography>
         </DialogContent>

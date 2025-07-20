@@ -29,7 +29,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '@/services/api';
 
@@ -54,8 +53,6 @@ const RegisterSellerPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const router = useRouter();
-  const { login } = useAuth();
-
   const {
     register,
     handleSubmit,
@@ -64,23 +61,25 @@ const RegisterSellerPage: React.FC = () => {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = async (data: any) => {
+  interface SellerFormData {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    businessName: string;
+    businessPhone: string;
+    businessAddress: string;
+    businessEmail?: string;
+    gstNumber?: string;
+    panNumber?: string;
+  }
+
+  const onSubmit = async (data: SellerFormData) => {
     try {
       setLoading(true);
       setError('');
 
-      const response = await api.post('/auth/register-seller', {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        phone: data.phone,
-        businessName: data.businessName,
-        businessPhone: data.businessPhone,
-        businessAddress: data.businessAddress,
-        businessEmail: data.businessEmail,
-        gstNumber: data.gstNumber,
-        panNumber: data.panNumber,
-      });
+      const response = await api.post('/auth/register-seller', data);
 
       // Store token and user data
       localStorage.setItem('token', response.data.token);
@@ -88,10 +87,12 @@ const RegisterSellerPage: React.FC = () => {
 
       toast.success('Seller registration successful!');
       router.push('/seller/dashboard');
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       console.error('Registration error:', error);
-      setError(error.response?.data?.message || 'Registration failed');
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const errorMessage = error.response?.data?.message || 'Registration failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

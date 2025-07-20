@@ -75,9 +75,10 @@ const LoginPage: React.FC = () => {
       await login(data.email, data.password);
       toast.success('Login successful!');
       router.push('/shop');
-    } catch (error: any) {
-      setError(error.message);
-      toast.error(error.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -89,21 +90,17 @@ const LoginPage: React.FC = () => {
 
   const { user } = useAuth();
     useEffect(() => {
-    if (user && user.role === 'seller') {
-      console.log(user);
-      router.push('/seller/dashboard');
-      return;
-    }
-    else if (user && user.role === 'delivery') {
-      console.log(user);
-      router.push('/delivery/dashboard');
-      return;
-    }
-    else if (user){
-      router.push('/shop');
-      return;
-    }
-  }, [user]);
+    if (!user) return;
+
+    const redirects: Record<string, string> = {
+      'seller': '/seller/dashboard',
+      'delivery': '/delivery/dashboard',
+      'default': '/shop'
+    };
+
+    const redirectPath = user.role ? redirects[user.role] || redirects.default : redirects.default;
+    router.push(redirectPath);
+  }, [user, router]);
 
   return (
     <Box
@@ -304,7 +301,7 @@ const LoginPage: React.FC = () => {
 
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2">
-                      Don't have an account?{' '}
+                      Don&apos;t have an account?{' '}
                       <Link
                         component={NextLink}
                         href="/auth/register"

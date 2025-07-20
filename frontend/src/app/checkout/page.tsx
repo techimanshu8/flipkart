@@ -16,11 +16,6 @@ import {
   FormControlLabel,
   Radio,
   Divider,
-  Alert,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -35,9 +30,6 @@ import {
   Add,
   Edit,
   Delete,
-  LocalShipping,
-  Payment,
-  ShoppingCart,
   CheckCircle,
   Home,
   Work,
@@ -89,7 +81,7 @@ const CheckoutPage: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState<string>('cod');
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [orderPlaced, setOrderPlaced] = useState(false);
+  //const [orderPlaced, setOrderPlaced] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
@@ -146,8 +138,18 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  interface AddressFormData {
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+    type: 'home' | 'work' | 'other';
+  }
+
   // Save address
-  const saveAddress = async (data: any) => {
+  const saveAddress = async (data: AddressFormData) => {
     try {
       setLoading(true);
       if (editingAddress) {
@@ -161,8 +163,9 @@ const CheckoutPage: React.FC = () => {
       setAddressDialogOpen(false);
       reset();
       setEditingAddress(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to save address');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to save address';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -174,8 +177,9 @@ const CheckoutPage: React.FC = () => {
       await api.delete(`/users/addresses/${addressId}`);
       toast.success('Address deleted successfully');
       fetchAddresses();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete address');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to delete address';
+      toast.error(errorMsg);
     }
   };
 
@@ -219,7 +223,7 @@ const CheckoutPage: React.FC = () => {
         totalAmount: cart?.totalAmount,
       };
 
-      const response = await api.post('/orders', orderData);
+      await api.post('/orders', orderData);
       
       if (selectedPayment === 'cod') {
         // For COD, order is placed immediately
@@ -236,8 +240,9 @@ const CheckoutPage: React.FC = () => {
           toast.success('Payment successful! Order placed.');
         }, 2000);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to place order');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to place order';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -282,7 +287,7 @@ const CheckoutPage: React.FC = () => {
       return;
     }
     fetchAddresses();
-  }, [user, cart]);
+  }, [user, cart, router]);
 
   if (!user || !cart) return null;
 
@@ -302,7 +307,7 @@ const CheckoutPage: React.FC = () => {
                 width={60}
                 height={60}
                 style={{ objectFit: 'cover' }}
-                onError={(e: any) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   e.currentTarget.src = '/placeholder.jpg';
                 }}
               />

@@ -105,8 +105,9 @@ const OrdersPage: React.FC = () => {
       await api.put(`/orders/${orderId}/cancel`);
       toast.success('Order cancelled successfully');
       fetchOrders();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to cancel order');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to cancel order';
+      toast.error(errorMsg);
     }
   };
 
@@ -209,7 +210,7 @@ const OrdersPage: React.FC = () => {
       return;
     }
     fetchOrders();
-  }, [user]);
+  }, [user, router]);
 
   if (!user) return null;
 
@@ -253,7 +254,7 @@ const OrdersPage: React.FC = () => {
                       </Typography>
                       <Chip
                         label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        color={getStatusColor(order.status) as any}
+                        color={getStatusColor(order.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                         icon={getStatusIcon(order.status)}
                         size="small"
                       />

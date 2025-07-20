@@ -9,8 +9,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
-  Chip,
 } from '@mui/material';
 import {
   ShoppingCart,
